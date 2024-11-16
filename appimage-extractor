@@ -1,0 +1,80 @@
+#!/bin/bash
+
+squash_dir="squashfs-root"
+appimage_dir="/tmp/appimages"
+
+filename=$(basename "$1")
+base_name="${filename%.AppImage}"
+appname_path="${base_name%-[0-9]*}"
+
+how_to_use(){
+  printf "[\033[0;31;40m-\033[0m] Error: No file provided. Usage: $0 /full-path/<filename>\n"
+  exit 1
+}
+
+check_file(){
+  if [[ ! -f "$1" ]]; then
+    printf "[\033[0;31;40m-\033[0m] Error: The file '%s' does not exist. Please provide a valid file path.\n" "$1"
+    exit 1
+  fi
+}
+
+# Function to make the AppImage executable
+make_exec() {
+  chmod +x "$1" || {
+    printf "[\033[0;31;40m-\033[0m] Error: Failed to make '%s' executable.\n" "$1"
+    exit 1
+  }
+}
+
+# Function to extract the AppImage
+extract_file() {
+  "$1" --appimage-extract || {
+    printf "[\033[0;31;40m-\033[0m] Error: Failed to extract AppImage '%s'.\n" "$1"
+    exit 1
+  }
+}
+
+# Function to organize the extracted files
+put_inplace() {
+  mkdir -p "$appimage_dir/$appname_path" || {
+    printf "[\033[0;31;40m-\033[0m] Error: Failed to create directory '%s'.\n" "$appimage_dir/$appname_path"
+    exit 1
+  }
+  mv "$squash_dir" "$appimage_dir/$appname_path" || {
+    printf "[\033[0;31;40m-\033[0m] Error: Failed to move '%s' to '%s'.\n" "$squash_dir" "$appimage_dir/$appname_path"
+    exit 1
+  }
+  printf "[\033[0;32;40m+\033[0m] AppImage extracted to '%s/%s'.\n" "$appimage_dir" "$appname_path"
+}
+
+resolve_path() {
+  local input_path="$1"
+
+  # Expand ~ to the full home directory path
+  if [[ "$input_path" =~ ^~ ]]; then
+    input_path="${input_path/#\~/$HOME}"
+  fi
+
+  # Resolve the absolute path
+  realpath "$input_path" || {
+    printf "Error: Failed to resolve the path '%s'. Ensure the file exists.\n" "$input_path"
+    exit 1
+  }
+}
+
+main(){
+  if [[ -z $1 ]]; then
+    how_to_use
+  fi
+
+  # Resolve the absolute path
+  appimage_path=$(resolve_path "$1")
+
+  check_file "$appimage_path"
+  make_exec "$appimage_path"
+  extract_file "$appimage_path"
+  put_inplace
+}
+
+main "$@"
