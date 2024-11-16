@@ -11,6 +11,12 @@ change it to your desired location.
 # How to run
 it is highly recommended to use full path of the file instead of just giving filename to the script. 
 The script expects an argument to be passed which is file path, example usage:
+### Cloning the repository:
+```bash
+git clone https://github.com/3c6c/appimage-extractor/
+cd appimage-extractor
+```
+### Using the script:
 ```bash
 chmod +x appimage-extractor
 appimage-extractor /path_to_file/filename
